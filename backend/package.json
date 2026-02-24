@@ -2,7 +2,7 @@
   "name": "taskqueue-backend",
   "version": "1.0.0",
   "scripts": {
-    "start": "node server.js",
+    "start": "npx nodemon server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {

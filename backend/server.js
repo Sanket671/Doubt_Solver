@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -12,10 +13,21 @@ const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+// MongoDB connection (sanitize and validate URI)
+const rawMongo = process.env.MONGODB_URI || '';
+const sanitized = rawMongo.split('#')[0].trim();
+let mongoUri = sanitized;
+if (mongoUri && !mongoUri.startsWith('mongodb://') && !mongoUri.startsWith('mongodb+srv://')) {
+  console.warn('MONGODB_URI missing scheme, prepending mongodb://');
+  mongoUri = `mongodb://${mongoUri}`;
+}
+if (!mongoUri) {
+  console.error('MONGODB_URI is not set. Check backend/.env');
+} else {
+  mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected'))
+    .catch(err => console.error('MongoDB connection error:', err.message || err));
+}
 
 // VAPID keys
 webpush.setVapidDetails(
