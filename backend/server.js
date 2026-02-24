@@ -13,9 +13,15 @@ const app = express();
 
 // Normalize FRONTEND_URL to avoid mismatched trailing-slash issues
 const frontendUrlRaw = process.env.FRONTEND_URL || '';
+const frontendUrlRaw2 = process.env.FRONTEND_URL2 || '';
 const frontendUrl = frontendUrlRaw.replace(/\/+$/, '');
+const frontendUrl2 = frontendUrlRaw2.replace(/\/+$/, '');
 if (frontendUrl) {
-  app.use(cors({ origin: frontendUrl }));
+  app.use(cors({ origin: [
+    frontendUrl,
+    frontendUrl2
+  ],
+  credentials: true }));
 } else {
   // If no FRONTEND_URL provided, allow all origins (reasonable for local/dev)
   app.use(cors());
