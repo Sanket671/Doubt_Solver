@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './index.css';
 
-const API = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+// Build a safe API base URL that ensures the backend '/api' prefix is present.
+const rawApi = import.meta.env.VITE_API_URL || '';
+const apiRoot = rawApi.replace(/\/+$/, '');
+const baseURL = apiRoot ? (apiRoot.endsWith('/api') ? apiRoot : `${apiRoot}/api`) : '';
+const API = axios.create({ baseURL });
 
 function App() {
   const [questions, setQuestions] = useState([]);

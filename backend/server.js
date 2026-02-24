@@ -10,7 +10,17 @@ const subscribeRoutes = require('./routes/subscribe');
 const PushSubscription = require('./models/PushSubscription');
 
 const app = express();
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+
+// Normalize FRONTEND_URL to avoid mismatched trailing-slash issues
+const frontendUrlRaw = process.env.FRONTEND_URL || '';
+const frontendUrl = frontendUrlRaw.replace(/\/+$/, '');
+if (frontendUrl) {
+  app.use(cors({ origin: frontendUrl }));
+} else {
+  // If no FRONTEND_URL provided, allow all origins (reasonable for local/dev)
+  app.use(cors());
+}
+
 app.use(express.json());
 
 // MongoDB connection (sanitize and validate URI)
