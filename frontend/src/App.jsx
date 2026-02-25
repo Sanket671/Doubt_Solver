@@ -54,9 +54,15 @@ function App() {
 
   // ---------- Effects (runs once on mount) ----------
   useEffect(() => {
-    fetchQueue();
-    fetchSolved();
-    requestNotificationPermission();
+    (async () => {
+      try {
+        await fetchQueue();
+        await fetchSolved();
+        await requestNotificationPermission();
+      } catch (err) {
+        console.error('Initialization failed', err);
+      }
+    })();
   }, []); // Empty dependency array ensures this runs only once
 
   // ---------- UI action handlers ----------

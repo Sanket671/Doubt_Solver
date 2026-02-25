@@ -1,5 +1,5 @@
 // Minimal service worker: install, activate, basic fetch passthrough, and push handler
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
