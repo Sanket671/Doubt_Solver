@@ -11,41 +11,21 @@ const PushSubscription = require('./models/PushSubscription');
 
 const app = express();
 
-// Normalize FRONTEND_URL to avoid mismatched trailing-slash issues
-const frontendUrlRaw = process.env.FRONTEND_URL || '';
-const frontendUrlRaw2 = process.env.FRONTEND_URL2 || '';
-const frontendUrl = frontendUrlRaw.replace(/\/+$/, '');
-const frontendUrl2 = frontendUrlRaw2.replace(/\/+$/, '');
-if (frontendUrl) {
-  app.use(cors({ origin: [
-    frontendUrl,
-    frontendUrl2
-  ],
-  credentials: true }));
-} else {
-  // If no FRONTEND_URL provided, allow all origins (reasonable for local/dev)
-  app.use(cors());
-}
-
+// ✅ Allow all origins (you can tighten this later)
+app.use(cors());
 app.use(express.json());
 
-// MongoDB connection (sanitize and validate URI)
-const rawMongo = process.env.MONGODB_URI || '';
-const sanitized = rawMongo.split('#')[0].trim();
-let mongoUri = sanitized;
-if (mongoUri && !mongoUri.startsWith('mongodb://') && !mongoUri.startsWith('mongodb+srv://')) {
-  console.warn('MONGODB_URI missing scheme, prepending mongodb://');
-  mongoUri = `mongodb://${mongoUri}`;
-}
+// MongoDB connection
+const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
   console.error('MONGODB_URI is not set. Check backend/.env');
-} else {
-  mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error('MongoDB connection error:', err.message || err));
+  process.exit(1);
 }
+mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err.message || err));
 
-// VAPID keys
+// VAPID keys for web push
 webpush.setVapidDetails(
   'mailto:your-email@example.com',
   process.env.VAPID_PUBLIC_KEY,
@@ -56,7 +36,7 @@ webpush.setVapidDetails(
 app.use('/api/questions', questionRoutes);
 app.use('/api/subscribe', subscribeRoutes);
 
-// Notification endpoint for cron job
+// Notification endpoint (for cron job)
 app.get('/api/notify', async (req, res) => {
   try {
     const subscriptions = await PushSubscription.find();
@@ -69,7 +49,6 @@ app.get('/api/notify', async (req, res) => {
 
     const sendPromises = subscriptions.map(sub => 
       webpush.sendNotification(sub, payload).catch(err => {
-        // If subscription is invalid, remove it
         if (err.statusCode === 410) {
           PushSubscription.deleteOne({ endpoint: sub.endpoint }).exec();
         }
@@ -84,4 +63,3 @@ app.get('/api/notify', async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-

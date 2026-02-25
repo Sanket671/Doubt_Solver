@@ -2,11 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import './index.css';
 
-// Build a safe API base URL that ensures the backend '/api' prefix is present.
-const rawApi = import.meta.env.VITE_API_URL || '';
-const apiRoot = rawApi.replace(/\/+$/, '');
-const baseURL = apiRoot ? (apiRoot.endsWith('/api') ? apiRoot : `${apiRoot}/api`) : '';
-const API = axios.create({ baseURL });
+// Base URL from environment variable (set in Vercel)
+const API = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' });
 
 function App() {
   const [questions, setQuestions] = useState([]);
@@ -15,7 +12,6 @@ function App() {
   const [summary, setSummary] = useState('');
   const [showSolved, setShowSolved] = useState(false);
 
-  // ---------- Data fetching functions ----------
   const fetchQueue = async () => {
     const { data } = await API.get('/questions');
     setQuestions(data);
@@ -26,7 +22,6 @@ function App() {
     setSolved(data);
   };
 
-  // ---------- Push notification helpers ----------
   const registerPushSubscription = async () => {
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -52,7 +47,6 @@ function App() {
     }
   };
 
-  // ---------- Effects (runs once on mount) ----------
   useEffect(() => {
     (async () => {
       try {
@@ -63,9 +57,8 @@ function App() {
         console.error('Initialization failed', err);
       }
     })();
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
-  // ---------- UI action handlers ----------
   const addQuestion = async () => {
     if (!newQuestion.trim()) return;
     const { data } = await API.post('/questions', { text: newQuestion });
@@ -90,8 +83,8 @@ function App() {
     if (questions.length === 0) return;
     const current = questions[0];
     await API.patch(`/questions/${current._id}`, { summary, solved: true });
-    fetchQueue();   // refresh queue
-    fetchSolved();  // refresh solved list
+    fetchQueue();
+    fetchSolved();
     setSummary('');
   };
 
@@ -104,7 +97,6 @@ function App() {
     window.open('https://chat.openai.com', '_blank');
   };
 
-  // ---------- Render ----------
   return (
     <div className="container">
       <h1>🧠 TaskQueue Learning</h1>

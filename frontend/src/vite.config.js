@@ -34,6 +34,14 @@ export default defineConfig({
     })
   ],
   server: {
-    port: 5173
+    port: 5173,
+    proxy: {
+      // Proxy /api requests to the deployed backend during development
+      '/api': {
+        target: 'https://doubt-solver-aob6.onrender.com',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   }
 });
